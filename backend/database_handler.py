@@ -1,4 +1,24 @@
+from datetime import datetime
 import sqlite3
+
+"""
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+titulo TEXT,
+descricao TEXT,
+status TEXT CHECK(status IN ('pendente', 'concluida')),
+data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
+"""
+
+
+# Class TODO, everything is explicitly typed here so this con
+# be reused very clearly along the code
+class Todo:
+    def __init__(self, id: int, titulo: str, descricao: str, status: str, data_criacao: datetime) -> None:
+        self.id: int = id
+        self.titulo: str = titulo
+        self.descricao: str = descricao
+        self.status: str = status
+        self.data_criacao: datetime = data_criacao
 
 
 class Todos:
@@ -12,11 +32,13 @@ class Todos:
     def _get_connection(self):
         return sqlite3.connect(self.path)
 
-    def get_todos(self) -> list[tuple]:
+    def get_todos(self) -> list[Todo]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM todos")
-            return cursor.fetchall()
+            untyped_todos = cursor.fetchall()
+            todos = [Todo(*row) for row in untyped_todos]
+            return todos
 
     def insert(self, titulo: str, descricao: str, is_concluida: bool = False):
         status = "concluida" if is_concluida else "pendente"
