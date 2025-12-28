@@ -1,16 +1,71 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import TodoItem from './components/todo/todo'
+import TodoItem, { type Todo } from './components/todo/todo'
+
 
 function App() {
-  //const [count, setCount] = useState(0)
-  const [todos, setTodos] = useState([])
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetch("http://127.0.0.1:5000/tasks")
       .then(response => response.json())
       .then(data => setTodos(data.values))
+      .catch(error => console.error('Error fetching todos:', error))
   }, [])
+
+  const handleDelete = (id: number) => {
+    // Optimistically update UI
+    setTodos(todos.filter(todo => todo.id !== id))
+
+    // Delete from backend
+    fetch(`http://127.0.0.1:5000/tasks/${id}`, {
+      method: 'DELETE',
+    })
+      .catch(error => {
+        console.error('Error deleting todo:', error)
+        // Refetch to restore state on error
+        fetch("http://127.0.0.1:5000/tasks")
+          .then(response => response.json())
+          .then(data => setTodos(data.values))
+      })
+  }
+
+  const handleEdit = (todo: Todo) => {
+    setEditingId(todo.id)
+  }
+
+  const handleSave = (updatedTodo: Todo) => {
+    // Update local state
+    setTodos(todos.map(todo =>
+      todo.id === updatedTodo.id ? updatedTodo : todo
+    ))
+
+    // Clear editing state
+    setEditingId(null)
+
+    // Send to backend
+    fetch(`http://127.0.0.1:5000/tasks/${updatedTodo.id}`, {
+      method: 'PUT',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        titulo: updatedTodo.titulo,
+        descricao: updatedTodo.descricao,
+        status: updatedTodo.status
+      })
+    })
+      .catch(error => {
+        console.error('Error updating todo:', error)
+        // Refetch to restore state on error
+        fetch("http://127.0.0.1:5000/tasks")
+          .then(response => response.json())
+          .then(data => setTodos(data.values))
+      })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+  }
 
   return (
     <>
@@ -21,8 +76,11 @@ function App() {
             <TodoItem
               key={todo.id}
               todo={todo}
-              onEdit={() => { }}
-              onDelete={() => { }}
+              isEditing={editingId === todo.id}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onSave={handleSave}
+              onCancel={handleCancelEdit}
             />
           )
         })}
@@ -35,8 +93,11 @@ function App() {
             <TodoItem
               key={todo.id}
               todo={todo}
-              onEdit={() => { }}
-              onDelete={() => { }}
+              isEditing={editingId === todo.id}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onSave={handleSave}
+              onCancel={handleCancelEdit}
             />
           )
         })}

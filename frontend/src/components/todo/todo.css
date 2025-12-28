@@ -7,6 +7,11 @@
   padding: 12px;
 }
 
+.todo-item:hover {
+  background-color: #ccc;
+  cursor: pointer;
+}
+
 .todo-item:not(:last-child) {
   border-bottom: 1px solid #ccc;
 }
@@ -43,12 +48,13 @@
 /* Actions */
 .todo-actions {
   display: flex;
+  align-items: center;
   gap: 6px;
 }
 
 /* Buttons */
 .btn {
-  padding: 4px 8px;
+  padding: 4px;
   font-size: 0.8rem;
   border: 1px solid #ccc;
   background: none;
@@ -58,4 +64,12 @@
 
 .btn:hover {
   background-color: #f5f5f5;
+  color: #242424;
+}
+
+
+.todo-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }

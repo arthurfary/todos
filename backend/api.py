@@ -4,13 +4,21 @@ from database_handler import Todos
 
 db = Todos()
 app = Flask(__name__)
-# TODO: MAKE PORT A CONFIGURABLE ENV VARIABLE
-CORS(app, resources={r"/tasks": {"origins": "http://localhost:5173"}})
+
+CORS(
+    app,
+    resources={
+        r"/tasks/*": {
+            "origins": ["http://localhost:5173", "http://localhost:5000"],
+            "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
+            "allow_headers": ["Content-Type"],
+        }
+    },
+)
 
 
 @app.route("/tasks", methods=["GET", "POST"])
-def get_tasks():
-    # using match so every thing is explicitly handled
+def get_create_route():
     match request.method:
         case "POST":
             db.insert("Titulo", "Descrição...")
@@ -29,3 +37,30 @@ def get_tasks():
             ]
             ret = {"status": 200, "values": ret}
             return jsonify(ret)
+
+
+@app.route("/tasks/<int:id>", methods=["DELETE", "OPTIONS"])
+def delete_route(id: int):
+    if request.method == "OPTIONS":
+        return "", 204
+    db.delete(id)
+    return {"status": 200}
+
+
+@app.route("/tasks/<int:id>", methods=["PUT", "OPTIONS"])
+def update_route(id: int):
+    if request.method == "OPTIONS":
+        return "", 204
+    data = request.get_json()
+    db.update(
+        id=id,
+        novo_titulo=data.get("titulo"),
+        nova_descricao=data.get("descricao"),
+        is_concluida=(data.get("status") == "concluida"),
+    )
+    return {"status": 200}
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
